@@ -1,0 +1,357 @@
+---
+title: "Model averaging"
+subtitle: "Why choose just one model for prediction?"
+author:
+  - Elizabeth King
+  - Kevin Middleton
+format:
+  revealjs:
+    theme: [default, custom.scss]
+    standalone: true
+    embed-resources: true
+    logo: QMLS_Logo.png
+    slide-number: true
+    show-slide-number: all
+    link-external-newwindow: true
+bibliography: Bayes.bib
+csl: evolution.csl
+---
+
+## Model averaging
+
+```{r}
+#| label: setup
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(readxl)
+library(wesanderson)
+library(cowplot)
+ggplot2::theme_set(theme_cowplot(font_size = 16))
+
+library(cmdstanr)
+library(brms)
+library(bayesplot)
+color_scheme_set(scheme = "red")
+
+options(brms.backend = "cmdstanr",
+        mc.cores = 4)
+```
+
+- Fit several candidate models
+- Don't choose the "best" and pretend it was the only model you fit
+    - Combine posterior distribution from models
+    - Analysis of parameter estimates or prediction for out-of-sample data
+    - Weight each by their relative support
+
+
+## Model weights
+
+- WAIC (lecture 5.2)
+- PSIS-LOO-CV (lecture 5.3)
+- Stacking of means [@Yao2018-zi] (*preferred*)
+- Bayesian model averaging (BMA)
+- Pseudo-BMA with Bayesian bootstrap (*2nd* preferred)
+- Pseudo-BMA without Bayesian bootstrap
+
+[Description in the `loo` package](https://mc-stan.org/loo/articles/loo2-weights.html)
+
+
+## Five models for energy expenditure
+
+```{r}
+#| echo: false
+
+M <- abdData::MoleRats |> 
+  rename(Caste = caste,
+         Mass = ln.mass,
+         Energy= ln.energy) |> 
+  mutate(Caste = if_else(Caste == "worker", "Worker", "NonWorker"),
+         Caste = factor(Caste))
+
+mytheme <- list(
+  theme_cowplot(font_size = 10),
+  theme(legend.position = "none"),
+  labs(x = "Body Mass",
+       y = "Energy Expenditure"),
+  scale_color_manual(values = wes_palette("Cavalcanti1"))
+)
+
+fm1 <- lm(Energy ~ 1, data = M)
+M <- M |> mutate(pred1 = predict(fm1))
+p1 <- ggplot(M, aes(x = Mass, y = Energy, color = Caste)) +
+  geom_point(size = 3) +
+  geom_line(aes(x = Mass, y = pred1), linewidth = 1.5,
+            color = wes_palette("Cavalcanti1")[5]) +
+  labs(title = "fm1") +
+  mytheme
+
+fm2 <- lm(Energy ~ Caste, data = M)
+M <- M |> mutate(pred2 = predict(fm2))
+p2 <- ggplot(M, aes(x = Mass, y = Energy, color = Caste)) +
+  geom_point(size = 3) +
+  geom_line(aes(x = Mass, y = pred2, color = Caste), linewidth = 1.5) +
+  labs(title = "fm2") +
+  mytheme
+
+fm3 <- lm(Energy ~ Mass, data = M)
+M <- M |> mutate(pred3 = predict(fm3))
+p3 <- ggplot(M, aes(x = Mass, y = Energy, color = Caste)) +
+  geom_point(size = 3) +
+  geom_line(aes(x = Mass, y = pred3, group = 1), linewidth = 1.5,
+            color = wes_palette("Cavalcanti1")[5]) +
+  labs(title = "fm3") +
+  mytheme
+
+fm4 <- lm(Energy ~ Mass + Caste, data = M)
+M <- M |> mutate(pred4 = predict(fm4))
+p4 <- ggplot(M, aes(x = Mass, y = Energy, color = Caste)) +
+  geom_point(size = 3) +
+  geom_line(aes(x = Mass, y = pred4, color = Caste), linewidth = 1.5) +
+  labs(title = "fm4") +
+  mytheme
+
+fm5 <- lm(Energy ~ Mass * Caste, data = M)
+M <- M |> mutate(pred5 = predict(fm5))
+p5 <- ggplot(M, aes(x = Mass, y = Energy, color = Caste)) +
+  geom_point(size = 3) +
+  geom_line(aes(x = Mass, y = pred5, color = Caste), linewidth = 1.5) +
+  labs(title = "fm5") +
+  mytheme
+
+plot_grid(p1, p2, p3, p4, p5, ncol = 3)
+```
+
+
+## Five models for energy expenditure
+
+```{r}
+#| echo: true
+#| output: false
+#| message: false
+#| warning: false
+
+fm1 <- brm(Energy ~ 1, data = M,
+           prior = prior(normal(0, 3), class = Intercept), iter = 2e4,
+           refresh = 0, seed = 3476283)
+fm2 <- brm(Energy ~ Caste, data = M,
+           prior = prior(normal(0, 3), class = b), iter = 2e4,
+           refresh = 0, seed = 312379)
+fm3 <- brm(Energy ~ Mass, data = M,
+           prior = prior(normal(0, 3), class = b), iter = 2e4,
+           refresh = 0, seed = 12365864)
+fm4 <- brm(Energy ~ Mass + Caste, data = M,
+           prior = prior(normal(0, 3), class = b), iter = 2e4,
+           refresh = 0, seed = 8873542)
+fm5 <- brm(Energy ~ Mass * Caste, data = M,
+           prior = prior(normal(0, 3), class = b), iter = 2e4,
+           refresh = 0, seed = 612356)
+```
+
+
+## Comparison of model weights
+
+```{r}
+#| echo: true
+#| output-location: slide
+
+mw1 <- model_weights(fm1, fm2, fm3, fm4, fm5, weights = "waic")
+mw2 <- model_weights(fm1, fm2, fm3, fm4, fm5, weights = "loo")
+mw3 <- model_weights(fm1, fm2, fm3, fm4, fm5, weights = "stacking")
+mw4 <- model_weights(fm1, fm2, fm3, fm4, fm5, weights = "pseudobma",
+                     BB = FALSE)
+mw5 <- model_weights(fm1, fm2, fm3, fm4, fm5, weights = "pseudobma")
+
+tibble(Model = paste0("fm", 1:5),
+       WAIC = mw1,
+       LOO = mw2,
+       Stacking = mw3,
+       PseudoBMA = mw4,
+       `PseudoBMA + BB` = mw5) |> 
+  knitr::kable(digits = 2)
+```
+
+
+## Two kinds of posterior intervals
+
+1. HDIs for the parameter estimates
+    - Credible ranges for expected values
+    - `posterior_epred()` (Lecture 3.4)
+2. HDIs for new or observed values ("posterior predictive distribution")
+    - Include the uncertainty ($\sigma$)
+    - Wider than expected values intervals
+    - `posterior_predict()`
+
+
+## Posterior prediction for model 4
+
+```{r}
+#| echo: true
+
+pp_fm4 <- crossing(Mass = seq(3.8, 5.3, length.out = 200),
+                   Caste = levels(M$Caste))
+
+pp <- posterior_predict(fm4, newdata = pp_fm4) |> 
+  as.data.frame()
+str(pp)
+```
+
+
+## Posterior prediction for model 4
+
+```{r}
+#| echo: true
+
+pp_fm4 <- pp_fm4 |> 
+  mutate(Q50 = apply(pp, MARGIN = 2, FUN = median),
+         Q5.5 = apply(pp, MARGIN = 2, FUN = quantile, prob = 0.055),
+         Q94.5 = apply(pp, MARGIN = 2, FUN = quantile, prob = 0.945))
+head(pp_fm4)
+```
+
+
+## Posterior prediction for model 4
+
+```{r}
+p4 <- ggplot() +
+  geom_point(data = M,
+             aes(x = Mass, y = Energy, color = Caste),
+             size = 3) +
+  geom_line(data = pp_fm4,
+            aes(x = Mass, y = Q50, color = Caste),
+            linewidth = 1.5) +
+  geom_ribbon(data = pp_fm4,
+              aes(x = Mass, ymin = Q5.5, ymax = Q94.5, fill = Caste),
+              alpha = 0.25) +
+  scale_color_manual(values = wes_palette("Cavalcanti1")) +
+  scale_fill_manual(values = wes_palette("Cavalcanti1")) +
+  theme(legend.justification = c(0, 1),
+        legend.position = c(0.05, 1)) +
+  labs(x = "ln Body Mass (g)",
+       y = "ln Daily Energy Expenditure (kJ)",
+       title = "Model 4") +
+  ylim(c(2.5, 6))
+p4
+```
+
+
+## Posterior prediction for model 5
+
+```{r}
+#| echo: false
+
+pp_fm5 <- crossing(Mass = seq(3.8, 5.3, length.out = 200),
+                   Caste = levels(M$Caste))
+
+pp <- posterior_predict(fm5, newdata = pp_fm5) |> 
+  as.data.frame()
+
+pp_fm5 <- pp_fm5 |> 
+  mutate(Q50 = apply(pp, MARGIN = 2, FUN = median),
+         Q5.5 = apply(pp, MARGIN = 2, FUN = quantile, prob = 0.055),
+         Q94.5 = apply(pp, MARGIN = 2, FUN = quantile, prob = 0.945))
+
+p5 <- ggplot() +
+  geom_point(data = M,
+             aes(x = Mass, y = Energy, color = Caste),
+             size = 3) +
+  geom_line(data = pp_fm5,
+            aes(x = Mass, y = Q50, color = Caste),
+            linewidth = 1.5) +
+  geom_ribbon(data = pp_fm5,
+              aes(x = Mass, ymin = Q5.5, ymax = Q94.5, fill = Caste),
+              alpha = 0.25) +
+  scale_color_manual(values = wes_palette("Cavalcanti1")) +
+  scale_fill_manual(values = wes_palette("Cavalcanti1")) +
+  theme(legend.justification = c(0, 1),
+        legend.position = c(0.05, 1)) +
+  labs(x = "ln Body Mass (g)",
+       y = "ln Daily Energy Expenditure (kJ)",
+       title = "Model 5") +
+  ylim(c(2.5, 6))
+p5
+```
+
+
+## Model averaging by stacking
+
+Combine all models by their relative support
+
+```{r}
+#| echo: true
+
+pp_mod_avg <- crossing(Mass = seq(3.8, 5.3, length.out = 200),
+                       Caste = levels(M$Caste))
+
+pp <- pp_average(fm1, fm2, fm3, fm4, fm5,
+                 newdata = pp_mod_avg,
+                 weights = "stacking",
+                 method = "posterior_predict",
+                 probs = c(0.055, 0.5, 0.945))
+attr(pp, "weights") |> round(3)
+attr(pp, "ndraws")
+```
+
+
+## Join posterior predictions to new data
+
+```{r}
+#| echo: true
+
+pp_mod_avg <- bind_cols(pp_mod_avg, pp)
+head(pp_mod_avg)
+```
+
+
+## Plotting model average
+
+```{r}
+p_mod_avg <- ggplot() +
+  geom_point(data = M,
+             aes(x = Mass, y = Energy, color = Caste),
+             size = 3) +
+  geom_line(data = pp_mod_avg,
+            aes(x = Mass, y = Q50, color = Caste),
+            linewidth = 1.5) +
+  geom_ribbon(data = pp_mod_avg,
+              aes(x = Mass, ymin = Q5.5, ymax = Q94.5, fill = Caste),
+              alpha = 0.25) +
+  scale_color_manual(values = wes_palette("Cavalcanti1")) +
+  scale_fill_manual(values = wes_palette("Cavalcanti1")) +
+  theme(legend.justification = c(0, 1),
+        legend.position = c(0.05, 1)) +
+  labs(x = "ln Body Mass (g)",
+       y = "ln Daily Energy Expenditure (kJ)",
+       title = "Model Average") +
+  ylim(c(2.5, 6))
+p_mod_avg
+```
+
+
+## Comparison
+
+```{r}
+plot_grid(p4, p5, p_mod_avg, ncol = 3)
+```
+
+
+## Bayesian workflow 
+
+Also Gelman et al. [-@Gelman2020-fv] and Gabry et al. [@Gabry2019-tw]
+
+1. Model specification
+2. Prior specification
+3. Prior predictive simulation / check
+4. Sampling
+5. Diagnostics
+6. Posterior predictive simulation
+7. Summarizing the posterior
+8. Model comparison and averaging
+
+
+## References
+
+::: {#refs}
+:::

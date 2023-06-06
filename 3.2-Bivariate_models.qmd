@@ -1,0 +1,566 @@
+---
+title: "Bivariate models and regularizing priors"
+author:
+  - Elizabeth King
+  - Kevin Middleton
+format:
+  revealjs:
+    theme: [default, custom.scss]
+    standalone: true
+    embed-resources: true
+    logo: QMLS_Logo.png
+    slide-number: true
+    show-slide-number: all
+    link-external-newwindow: true
+bibliography: Bayes.bib
+---
+
+## Bivariate models
+
+
+```{r}
+#| label: setup
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(cowplot)
+ggplot2::theme_set(theme_cowplot(font_size = 18))
+
+library(truncnorm)
+
+library(rethinking)
+```
+
+$$y = \beta_0 + \beta_1 x$$
+
+- Need to explicitly include the intercept
+- $x$ is continuous: "linear regression"
+- $x$ is categorical: $t$-test or ANOVA
+  - $\beta_0 == 0$
+
+
+## Simulate data
+
+- $\beta_0 = 2$
+- $\beta_1 = 6.7$
+
+```{r}
+#| echo: true
+#| output-location: slide
+
+set.seed(4534759)
+D <- tibble(x = runif(20, 0, 10),
+            y = 2 + 6.7 * x + rnorm(20, 0, 3))
+
+ggplot(D, aes(x, y)) +
+  geom_point(size = 4)
+```
+
+
+## Model statements
+
+$y$ follows a normal distribution with a mean and standard deviation:
+
+$$y \sim  Normal(\mu, \sigma)$$
+
+The mean is a linear function of an intercept ($a$) and a slope ($b$):
+
+$$\mu =  \beta_0 + \beta_1 \cdot x$$
+
+. . .
+
+$\beta_0$ and $\beta_1$ are arbitrary names.
+
+- With more predictors, more meaningful names are useful
+
+
+## Prior prediction: Reasonable values for $\beta_0$, $\beta_1$, and $\sigma$
+
+- Think about the slope first
+- Intercept depends on the slope, so let it vary more
+  - Intercept is often not "interesting"
+  - Byproduct of the other parameters
+- Don't need to think about $\sigma$ for prior prediction (usually)
+
+
+## Normal distributions
+
+$\sim 95\%$ of points fall within $\pm 2$ standard deviations of the mean
+
+- Center parameter estimates on 0 (unless you have a reason otherwise *a priori*)
+  - "Slope not different from zero"
+  - "No difference in means"
+  - "No difference between groups"
+
+
+## Regularizing priors
+
+- Bayesian priors are conservative
+  - All values *not* equally likely (true for maximum likelihood)
+- Less likely to find an effect by chance
+- Lessens the influence of extreme or unusual values automatically
+
+
+## Prior prediction
+
+- Intercept probably $0 \pm 40$
+- Slope probably $0 \pm 10$
+
+```{r}
+#| echo: true
+#| output-location: slide
+
+set.seed(3457522)
+
+sim_model <- function(ii) {
+  b0 <- rnorm(1, 0, 20)
+  b1 <- rnorm(1, 0, 5)
+  tibble(rep = ii,
+         x = seq(0:10),
+         y = b0 + b1 * x)
+}
+
+sims <- purrr::map(.x = 1:50,
+            .f = sim_model) |> 
+  list_rbind()
+print(sims, n = 200)
+```
+
+
+## Plotting the prior predictions
+
+Are the predicted outcomes on the right scale?
+
+```{r}
+#| echo: true
+#| output-location: slide
+
+ggplot(sims, aes(x, y, group = rep)) +
+  geom_line(alpha = 0.5)
+```
+
+
+## Fitting the model
+
+```{r}
+#| echo: true
+#| output-location: slide
+
+fm <- ulam(
+  alist(
+    y ~ normal(mu, sigma),
+    mu <- b0 + b1 * x,
+    b0 ~ dnorm(0, 20),
+    b1 ~ dnorm(0, 5),
+    sigma ~ dhalfnorm(0, 5)
+  ),
+  data = D,
+  chains = 4,
+  iter = 5e3
+)
+```
+
+
+## Examining the stan code
+
+```{r}
+#| echo: true
+
+stancode(fm)
+```
+
+
+## Inspecting the chains: `traceplot`
+
+```{r}
+#| echo: true
+
+traceplot(fm)
+```
+
+
+## Inspecting the chains: Rank histogram
+
+```{r}
+#| echo: true
+
+trankplot(fm)
+```
+
+
+## Inspecting the output
+
+```{r}
+#| echo: true
+
+precis(fm)
+```
+
+Compare to `lm()`
+
+```{r}
+#| echo: true
+
+fm_lm <- lm(y ~ x, data = D)
+coef(fm_lm)
+confint(fm_lm, level = 0.89)
+```
+
+
+## Posteriors
+
+```{r}
+#| echo: true
+
+post <- extract.samples(fm) |> 
+  as.data.frame()
+post
+```
+
+
+## Distributions of posterior parameter estimates
+
+We will learn convenience tools for plotting later.
+
+```{r}
+#| echo: true
+#| output-location: slide
+
+post |> 
+  pivot_longer(cols = everything(),
+               names_to = "Parameter",
+               values_to = "Estimate") |> 
+  ggplot(aes(Estimate)) +
+  geom_density() +
+  facet_wrap("Parameter", scales = "free")
+```
+
+
+## Modeling categorical predictors
+
+1. Combinations of 0 and 1
+    - Multiplication of parameters by 0 drops them
+    - Induces additional uncertainty
+2. Separate categories
+    - Preferred
+    - Estimate means directly
+    - Code as integers starting with 1 (`rethinking`, `stan`) or as factors (`brms`, `rstanarm`)
+
+
+## Modeling two category predictors
+
+Generate data:
+
+- n = 50
+- Means = 5 and 8
+
+```{r}
+#| echo: true
+#| output-location: slide
+
+set.seed(76546)
+n <- 50
+D <- tibble(y = c(rnorm(n, 5, 1),
+                  rnorm(n, 8, 1)),
+            Group01 = rep(0:1, each = n),
+            Group12 = rep(1:2, each = n))
+print(D, n = 100)
+```
+
+
+## Model statements
+
+$y$ follows a normal distribution with a mean and standard deviation:
+
+$$y \sim  Normal(\mu, \sigma)$$
+
+The mean is a linear function of a mean for Group 0 ($Group0$) and an offset for Group 1 ($b1$):
+
+$$\mu =  Group0 + b1 \cdot Group01$$
+
+`Group01` is either 0 (for group "0") or 1 (for group "1")
+
+
+## Prior prediction
+
+- Mean for Group 0 probably $0 \pm 10$
+- Difference for Group 1 probably $0 \pm 6$
+
+```{r}
+#| echo: true
+#| output-location: slide
+
+set.seed(3479711)
+
+sim_model <- function(ii) {
+  Group0 <- rnorm(1, 0, 5)
+  Grp1 <- rnorm(1, 0, 3)
+  tibble(rep = ii,
+         Group01 = rep(0:1, each = n),
+         y = Group0 + Grp1 * Group01 + rnorm(n = 50, mean = 0, sd = 1))
+}
+
+sims <- purrr::map(.x = 1:500,
+            .f = sim_model) |> 
+  list_rbind()
+print(sims, n = 200)
+```
+
+
+## Plotting the prior predictions
+
+Are the predicted outcomes on the right scale?
+
+```{r}
+#| echo: true
+#| output-location: slide
+
+sims |> 
+  mutate(Group01 = factor(Group01)) |> 
+  group_by(rep, Group01) |> 
+  summarise(Mean = mean(y)) |> 
+  ggplot(aes(x = Group01, y = Mean)) +
+  geom_point(position = position_jitter(width = 0.25))
+```
+
+
+## Fitting the model
+
+```{r}
+#| echo: true
+#| output-location: slide
+
+fm <- ulam(
+  alist(
+    y ~ dnorm(mu, sigma),
+    mu <- Group0 + b1 * Group01,
+    Group0 ~ dnorm(0, 5),
+    b1 ~ dnorm(0, 3),
+    sigma ~ dhalfnorm(0, 3)
+  ),
+  data = D,
+  chains = 4,
+  iter = 5e3
+)
+```
+
+
+## Inspecting the chains: `traceplot`
+
+```{r}
+#| echo: true
+
+traceplot(fm)
+```
+
+
+## Inspecting the chains: Rank histogram
+
+```{r}
+#| echo: true
+
+trankplot(fm)
+```
+
+
+## Inspecting the output
+
+```{r}
+#| echo: true
+
+precis(fm)
+```
+
+
+## Posteriors
+
+Each row is a simultaneous sample of all parameters:
+
+```{r}
+#| echo: true
+
+post <- extract.samples(fm) |> 
+  as.data.frame()
+post
+```
+
+
+## Distributions of posterior parameter estimates
+
+```{r}
+#| echo: true
+
+dens(post)
+```
+
+
+## Estimate for group 1
+
+Combine the Group 0 estimate with `b1` for each sample:
+
+```{r}
+#| echo: true
+
+post <- post |> 
+  mutate(Group1 = Group0 + b1)
+
+head(post)
+```
+
+
+## Plotting posterior distributions
+
+```{r}
+#| echo: true
+#| output-location: slide
+
+post |> 
+  dplyr::select(Group0, Group1) |> 
+  pivot_longer(cols = everything(),
+               names_to = "Group",
+               values_to = "Estimate") |> 
+  ggplot(aes(Estimate, fill = Group)) +
+  geom_density()
+```
+
+
+## HPDIs
+
+89% highest posterior density intervals
+
+```{r}
+#| echo: true
+
+HPDI(post$Group0)
+HPDI(post$Group1)
+```
+
+
+## Modeling categorical predictors by group
+
+- Use 1, 2, 3, etc. for groups
+- Use `[ ]` notation in the model statement
+
+$$y \sim  Normal(\mu, \sigma)$$
+
+$$\mu = b[Group12]$$
+
+`b[Group12]` tells stan to estimate each level of `Group12` separately
+
+
+## Prior prediction
+
+- Mean for groups probably $0 \pm 10$
+- Conservative to assume both are drawn from the same distribution
+
+```{r}
+#| echo: true
+#| output-location: slide
+
+set.seed(742999)
+
+sim_model <- function(ii) {
+  Group0 <- rnorm(n, 0, 10)
+  Group1 <- rnorm(n, 0, 10)
+  tibble(rep = ii,
+         Group0 = mean(Group0),
+         Group1 = mean(Group1))
+}
+
+sims <- purrr::map(.x = 1:500,
+            .f = sim_model) |> 
+  list_rbind()
+print(sims, n = 200)
+```
+
+
+## Plotting the prior predictions
+
+Are the predicted outcomes on the right scale?
+
+```{r}
+#| echo: true
+#| output-location: slide
+
+sims |> 
+  dplyr::select(-rep) |> 
+  pivot_longer(cols = everything(),
+               values_to = "Mean",
+               names_to = "Group") |>
+  ggplot(aes(x = Group, y = Mean)) +
+  geom_point(position = position_jitter(width = 0.25))
+```
+
+
+## Fitting the model
+
+```{r}
+#| echo: true
+#| output: false
+
+fm <- ulam(
+  alist(
+    y ~ dnorm(mu, sigma),
+    mu <- b[Group12],
+    b[Group12] ~ dnorm(0, 10),
+    sigma ~ dhalfnorm(0, 3)
+  ),
+  data = D,
+  chains = 4,
+  iter = 5e3
+)
+```
+
+
+## Inspecting the chains: `traceplot`
+
+```{r}
+#| echo: true
+
+traceplot(fm)
+```
+
+
+## Inspecting the chains: Rank histogram
+
+```{r}
+#| echo: true
+
+trankplot(fm)
+```
+
+
+## Inspecting the output
+
+Note `depth = 2` to return the levels of `b`
+
+```{r}
+#| echo: true
+
+precis(fm, depth = 2)
+```
+
+
+## Posterior
+
+Keep only the `b` estimates using `$b`:
+
+```{r}
+#| echo: true
+#| output-location: slide
+
+post <- extract.samples(fm)$b |> 
+  as.data.frame() |> 
+  rename(`Group 0` = V1,
+         `Group 1` = V2)
+
+post |> 
+  pivot_longer(cols = everything(),
+               names_to = "Group",
+               values_to = "Estimate") |> 
+  ggplot(aes(Estimate, fill = Group)) +
+  geom_density()
+```
+

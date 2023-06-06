@@ -1,0 +1,96 @@
+---
+title: "Inference frameworks"
+author:
+  - Elizabeth King
+  - Kevin Middleton
+format:
+  revealjs:
+    theme: [default, custom.scss]
+    standalone: true
+    embed-resources: true
+    logo: QMLS_Logo.png
+    slide-number: true
+    show-slide-number: all
+    link-external-newwindow: true
+bibliography: Bayes.bib
+---
+
+## Learning about the world with data
+
+```{r}
+#| label: setup
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(cowplot)
+ggplot2::theme_set(theme_cowplot())
+```
+
+1. Information: includes prior knowledge
+2. Assumptions: linearity or not quite, accuracy of data
+3. Inference & interpretation: "classical" frequentist vs. Bayesian
+
+
+## What is most important?
+
+**Frequentist**: Long-run expectations of existing data
+
+**Bayesian**: Incorporating prior information into the modeling process.
+
+<br />
+
+<center>
+*Both have challenges when making decisions.*
+</center>
+
+
+## Methods of inference/estimation
+
+- Closed form solution (mean, least squares)
+- Maximum likelihood
+- Resampling (Monte Carlo)
+- Bayesian
+
+In many cases, all will give similar answers.
+
+*Philosophically and in implementation and interpretation, these are all different from one another.*
+
+
+## Closed form solutions
+
+Mean:
+
+$$\bar{Y} = \frac{\sum_{i=1}^{n}Y_i}{n}$$
+
+
+## Bivariate regression slope
+
+Least squares:
+
+$$b = \frac{\sum\left(X_{i}-\bar{X}\right)\left(Y_{i}-\bar{Y}\right)}{\sum\left(X_{i}-\bar{X}\right)^{2}}$$
+
+Matrix algebra:
+
+$$\hat\beta=(X^TX)^{-1}X^Ty$$
+
+
+## Maximum likelihood
+
+For a given set of model parameter estimates, how likely is my data?
+
+- e.g., Search for the values of slope and intercept that maximizes the likelihood
+  - Optimization problem
+- General solution for questions that don't have closed form solutions (e.g., generalized linear models, multilevel models, etc.)
+
+
+## Resampling
+
+How does my observed test statistic compare to a null distribution of the same test statistic generated via resampling of the data?
+
+
+## Bayesian
+
+What distributions of model parameters are most compatible with the data, model, and priors?
+

@@ -1,0 +1,310 @@
+---
+title: "Model comparisons"
+subtitle: "Hypothesis testing and ROPEs"
+author:
+  - Elizabeth King
+  - Kevin Middleton
+format:
+  revealjs:
+    theme: [default, custom.scss]
+    standalone: true
+    embed-resources: true
+    logo: QMLS_Logo.png
+    slide-number: true
+    show-slide-number: all
+    link-external-newwindow: true
+bibliography: Bayes.bib
+csl: evolution.csl
+---
+
+## This week
+
+```{r}
+#| label: setup
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(readxl)
+library(wesanderson)
+library(cowplot)
+ggplot2::theme_set(theme_cowplot(font_size = 18))
+
+library(cmdstanr)
+library(brms)
+library(bayesplot)
+color_scheme_set(scheme = "red")
+
+options(brms.backend = "cmdstanr",
+        mc.cores = 4)
+```
+
+1. Hypothesis testing and ROPEs
+2. Information and WAIC
+3. Importance Sampling and PSIS-LOOCV
+4. Model averaging
+
+
+## Making Decisions in Data Analysis
+
+- Parameter estimation
+    - means, medians, intervals
+- Hypothesis testing
+    - P-values
+    - AIC, AICc
+    - Credible intervals, HDIs
+    - ROPEs
+    - LOO-CV values
+
+## Bayesian and frequentist approaches
+
+Frequentist / Maximum likelihood:
+
+- Parameters fixed, data varies
+- $Pr[Data | \theta]$
+
+Bayesian:
+
+- Data fixed, parameters vary
+- $Pr[\theta | Data]$
+
+$$Pr[\theta | Data] = \frac{Pr[Data | \theta] \times Pr[\theta]}{Pr[Data]}$$
+
+
+## Energy expenditure in naked mole rats
+
+<center>
+<img src="https://i.imgur.com/FMMAjpa.jpg" width="80%" />
+</center>
+
+
+## Energy expenditure in naked mole rats
+
+```{r}
+#| echo: false
+
+M <- abdData::MoleRats |> 
+  rename(Caste = caste,
+         Mass = ln.mass,
+         Energy= ln.energy) |> 
+  mutate(Caste = if_else(Caste == "worker", "Worker", "NonWorker"),
+         Caste = factor(Caste))
+
+ggplot(M, aes(x = Mass, y = Energy, color = Caste)) +
+  geom_point(size = 4) +
+  scale_color_manual(values = wes_palette("Cavalcanti1")) +
+  theme(legend.justification = c(0, 1),
+        legend.position = c(0.05, 1)) +
+  labs(x = "ln Body Mass (g)",
+       y = "ln Daily Energy Expenditure (kJ)")
+```
+
+
+## ANCOVA: intercepts varying
+
+```{r}
+#| echo: true
+
+fm <- lm(Energy ~ Mass + Caste, data = M)
+```
+
+```{r}
+#| label: ANCOVA_model
+#| echo: false
+
+M <- M |> mutate(pred = predict(fm))
+ggplot(M, aes(x = Mass, y = Energy, color = Caste)) +
+  geom_point(size = 4) +
+  geom_line(aes(x = Mass, y = pred, color = Caste), lwd = 2) +
+  scale_color_manual(values = wes_palette("Cavalcanti1")) +
+  theme(legend.justification = c(0, 1),
+        legend.position = c(0.05, 1)) +
+  labs(x = "ln Body Mass (g)",
+       y = "ln Daily Energy Expenditure (kJ)")
+```
+
+
+## Bayesian model
+
+- Return separate intercepts with `- 1`
+- Note *a lot* of samples are necessary for stable Bayes factors [@Schad2022-dc]
+    - 80,000 total post warm-up here
+
+```{r}
+#| echo: true
+#| output: false
+
+fm <- brm(Energy ~ Mass + Caste - 1, data = M,
+          prior = prior(normal(0, 3), class = b),
+          iter = 4e4,
+          cores = 4,
+          seed = 45873495)
+```
+
+
+## Parameter estimates of interest
+
+1. Shared slope for `Mass`
+2. "Intercept" difference of Worker vs. Non-worker castes
+    - Overall intercepts for `Caste` probably not interesting in this example
+    - What does `Mass` = 0 mean for a naked mole rat?
+
+
+## HDI-based tests
+
+- Against 0
+- Against an *a priori* value
+    - e.g., Isometric slope
+- Choose an interval (preferably not 95%)
+
+
+## HDI for slope
+
+```{r}
+#| echo: true
+summary(fm, prob = 0.89)
+```
+
+
+## HDI for differences
+
+```{r}
+#| echo: true
+library(tidybayes)
+
+post <- fm |> 
+  spread_rvars(b_Mass, b_CasteWorker, b_CasteNonWorker) |> 
+  mutate(d_W_NW = b_CasteWorker - b_CasteNonWorker, .keep = "unused")
+head(post)
+post |> 
+  median_hdi(b_Mass, d_W_NW, .width = 0.89)
+```
+
+
+## HDI Plot
+
+Many interesting visualizations in the [`see` package](https://easystats.github.io/see/articles/bayestestR.html)
+
+```{r}
+#| echo: true
+#| output-location: slide
+
+library(bayestestR)
+library(see)
+
+HD_interval <-  bayestestR::hdi(fm, ci = c(0.89))
+plot(HD_interval)
+```
+
+
+## Hypothesis tests with `hypothesis()`
+
+Similar to generalized linear hypothesis tests (`glht()` in `multcomp`)
+
+```{r}
+#| echo: true
+
+hypothesis(fm, "CasteWorker - CasteNonWorker = 0", alpha = 0.89)
+```
+
+
+## Estimate difference while sampling?
+
+- `gq>` statement in `ulam()` model
+- Pure `stan` code, and use `rstan` or `cmdstanr`
+- `generated quantities` block lets you access the samples at each iteration
+    - Calculations, predictions, etc., which all go into the output
+
+```{r}
+#| echo: true
+#| output-location: slide
+
+make_stancode(Energy ~ Mass + Caste - 1,
+              data = M,
+              prior = prior(normal(0, 3), class = b))
+```
+
+
+## Bayes factors
+
+- Closest Bayesian analogue for a *P*-value
+- Savage-Dickey ratio: Divide the density (height) of the posterior for $\theta$ by the density of the prior for $\theta$ at the point of interest (`null = 0`).
+- Popular in psychology
+
+
+## Bayes factors
+
+Can also be used for:
+
+- Directional tests (one-sided tests)
+- Intervals (ROPE-like)
+- Models vs. models
+
+
+## Bayes factors
+
+> "While Bayes factors provide an immediate approach to hypothesis testing, they are highly sensitive to details of the data/model assumptions." [@Schad2022-dc]
+
+```{r}
+#| echo: true
+
+(BF <- bayesfactor_parameters(fm, null = 0))
+```
+
+
+## Bayes factors
+
+```{r}
+#| echo: true
+
+plot(BF)
+```
+
+
+## Region of practical equivalence
+
+> "A difference of zero plus or minus some small amount is for practical purposes 'not different' from zero."
+
+[Easystats](https://easystats.github.io/bayestestR/articles/region_of_practical_equivalence.html) has a good introduction.
+
+Additional reading:
+
+- Kruschke [-@Kruschke2010-wi; @Kruschke2015-rp; @Kruschke2018-mg]
+- Kruschke et al. [-@Kruschke2012-sb]
+
+
+## `rope()`
+
+- Use `rope_range()` to automatically find the most suitable range for comparison.
+    - Think about what interval you consider practically equivalent
+- Recommended to use the entire posterior to determine the percentage in the ROPE (`ci = 1`)
+
+```{r}
+#| echo: true
+#| output-location: slide
+
+fm |> 
+  spread_rvars(b_Mass, b_CasteWorker, b_CasteNonWorker) |> 
+  rename(Mass = b_Mass) |> 
+  mutate(d_W_NW = b_CasteWorker - b_CasteNonWorker, .keep = "unused") |> 
+  rope(ci = 1, range = c(-0.25, 0.25))
+```
+
+
+## ROPE plot
+
+```{r}
+#| echo: true
+#| output-location: slide
+
+rope(fm, ci = 1, range = c(-0.25, 0.25)) |> 
+  plot()
+```
+
+
+## References
+
+::: {#refs}
+:::
+
