@@ -13,6 +13,7 @@ format:
 ```{r}
 #| echo: false
 #| message: false
+#| warning: false
 
 library(tidyverse)
 library(cowplot)
@@ -75,7 +76,7 @@ Second, install `cmdstanr`
 
 - You can follow along with [Getting started with cmdstanr](https://mc-stan.org/cmdstanr/articles/cmdstanr.html) or just run the following lines of code.
 - `install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))`
-- The first time you load `cmdstanr` with `library()`, it will prompt you to install the cmdstan backend (which does the actual comoilation and sampling of models)
+- The first time you load `cmdstanr` with `library()`, it will prompt you to install the cmdstan backend (which does the actual compilation and sampling of models)
     - Check that the toolchain is working `check_cmdstan_toolchain()`
     - If everything looks good, install cmdstan: `install_cmdstan()`
 - This takes a few minutes. Again, you only do this once.
