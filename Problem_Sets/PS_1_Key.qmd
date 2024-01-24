@@ -34,7 +34,7 @@ Because the packages that do Bayesian sampling have to compile their code for th
 
 *For Windows*: Install [RTools for Windows](https://cran.r-project.org/bin/windows/Rtools/rtools42/rtools.html)
 
-- You will want RTools version 4.2, because that matches the latest "point" version of R. You will need to update to RTools 4.3 when R 4.3 is released (and you update your R installation, which you should do).
+- You will want the latest version of RTools, because that will match the latest "point" version of R.
 - By default, it will install into `C:\`. If you do not have root access to your laptop (i.e., if you are on a University controlled machine) you can install to your user directory. You might need to change the PATH variable in this case (if you need help with that, let us know).
 
 *For MacOS*: Install the Xcode Command Line Tools
@@ -117,13 +117,36 @@ a <- extract.samples(fm)$a
 median(logistic(a))
 ```
 
-As stan starts compiling, you will get a warning about `Declaration of arrays by placing brackets after a variable name...`. You can ignore this warning. There is a code fix needed in `ulam()` that hasn't been made yet in the main branch. It doesn't impact the sampling.
+#### Possible error
 
-We will learn what all this code (`ulam`, `alist`, etc.) means soon. Don't worry about those for now. You will hopefully recognize that the last line outputs the median of the logistic transformation of `a`, a value which is very close to the proportion of carp that "passed" from our Unit 1 lectures (0.127). 
+Compiling the model might fail immediately with an error something like this:
+
+```
+Compiling Stan program...
+Error in `(function (command = NULL, args = character(), error_on_status = TRUE, …`:
+! System command 'make' failed
+---
+Exit status: 2
+Stderr:
+make: *** /c/Users/.../OneDrive: Is a directory.  Stop.
+```
+
+This problem seems only to be present on Windows machines where you home directory is stored on OneDrive. The solution is to force `ulam()` to use `rstan` instead of `cmdstan`. Add the following code to the chunk above:
+
+```
+set_ulam_cmdstan(FALSE)
+```
+
+and it should take care of the error.
+
+
+#### If everything went well
 
 Congratulations, you have just run a Bayesian model (a logistic regression to be more precise). Although we are perhaps getting a bit ahead of ourselves, it's nice to know that the machinery works.
 
-If your machinery does not work, let us know right away.
+We will learn what all this code (`ulam`, `alist`, etc.) means soon. Don't worry about those for now. You will hopefully recognize that the last line outputs the median of the logistic transformation of `a`, a value which is very close to the proportion of carp that "passed" from our Unit 1 lectures (0.127). 
+
+If your machinery does not work even after the fix above, let us know right away.
 
 
 ## Handedness in Common Toads
@@ -149,7 +172,7 @@ chisq.test(c(14, 4))
 chisq.test(c(26, 10))
 ```
 
-Here's a function to plot two Beta distributions together. You provide a and b for each distribution, and the plot is made. These could, for example, be the prior and posterior distributions.
+Here's a function to plot two Beta distributions together. You provide `a` and `b` for each distribution, and the plot is made. These could, for example, be the prior and posterior distributions.
 
 Examine the code and make sure you understand what it does.
 
@@ -227,7 +250,7 @@ What are the median and 95% credible interval for the proportion of right pawed 
 
 How does the median compare to the "raw" proportion (26/36)? Why is this median closer to the raw proportion than in experiment 1?
 
->  The raw proportion is 0.722. The median of the posterior is 0.712. The two values are close because there is twice as much data in experiment 2 than in experiment 1 (36 observations vs. 18 observations). But they have the same Beta(1, 1) prior, so the data in experiment 2 is relatively stronger vs. the prior.
+> The raw proportion is 0.722. The median of the posterior is 0.712. The two values are close because there is twice as much data in experiment 2 than in experiment 1 (36 observations vs. 18 observations). But they have the same Beta(1, 1) prior, so the data in experiment 2 is relatively stronger vs. the prior.
 
 
 ### Beta(5, 5) Prior
@@ -322,16 +345,16 @@ Some cricket species (and other types of insects) show a discrete wing polymorph
 
 Let's consider the simple case where you have the question: what is the proportion of long winged crickets in one population. Typically, an experimenter would go to this population and sample a set of crickets to estimate this parameter. A Bayesian analysis (like the one you just did!) asks: given this sample, what is the relative probability of different parameters (i.e., possible actual proportions in the population).
 
-A frequentist analysis instead asks: for different possible parameters, what is the probabilty of observing this sample? The estimate is the parameter that leads to the highest probability of observing the sample. The measure of uncertainty (a confidence interval) is based in this same framework: assuming a true population parameter, what would you observe with repeated sampling? 
+A frequentist analysis instead asks: for different possible parameters, what is the probability of observing this sample? The estimate is the parameter that leads to the highest probability of observing the sample. The measure of uncertainty (a confidence interval) is based in this same framework: assuming a true population parameter, what would you observe with repeated sampling? 
 
 We will explore this difference in the two frameworks here.
 
 Let's say you are omniscient and you know the true proportion of long winged crickets is 0.3 in the population (i.e., if you phenotyped every single cricket in the population, 30% would be long winged). Use this true value, and generate a dataset of 100 crickets using `rbinom()`. Don't forget to set the seed.
 
 - Calculate the mean value for your one sample
-- Use `glm()` and `family = binomial` to fit a logistic regression fitting only the intercept. Back transform the estimate from the logit using the equation $1 / 1 + \exp(- coef(model))$, where `coef(model)` is the coefficient estimate for the glm model. Note that this estimate matches the mean
+- Use `glm()` and `family = binomial` to fit a logistic regression fitting only the intercept. Back transform the estimate from the logit using the equation $1 / 1 + \exp(- coef(model))$, where `coef(model)` is the coefficient estimate for the glm model. Note that this estimate matches the mean.
 - Calculate the 95% confidence interval for the estimate of the mean proportion ($\mu_P$) using the normal approximation: $\mu_P \pm1.96 * \sqrt{(\mu_P*(1-\mu_P))/n}$, where $n$ is the sample size.
-- Place these values along with an index value of 1 in a tibble, and plot the confidence interval with a point for the mean and a horizontal segment at the index value for the CI. Add a vertical line showing the true proportion in the population. Set the x-axis to range from 0 to 1.  
+- Place these values along with an index value of 1 in a tibble (`index = 1`). We will use the index to organize the CIs in the next step. Plot the confidence interval with a point for the mean and a horizontal segment at the index value for the CI. Add a vertical line showing the true proportion in the population. Set the x-axis to range from 0 to 1.  
 
 ```{r}
 # FIXME
@@ -339,26 +362,30 @@ set.seed(38277983)
 
 propLW <- 0.3
 Nsamp <- 100
-WP <- rbinom(Nsamp,1,propLW)
+WP <- rbinom(Nsamp, 1, propLW)
 
 muP <- mean(WP)
 
-mod <- summary(glm(WP ~ 1, family=binomial))
-estL <- 1/(1 + exp(-coef(mod)[1]))
+mod <- summary(glm(WP ~ 1, family = binomial))
+estL <- 1 / (1 + exp(-coef(mod)[1]))
 
-SEp <- 1.96*sqrt((muP*(1-muP))/Nsamp)
+SEp <- 1.96 * sqrt((muP * (1 - muP)) / Nsamp)
 
-CI_dat <- tibble(index = 1, mu = muP, lower = muP-SEp, upper = muP+SEp)
+CI_dat <- tibble(index = 1,
+                 mu = muP,
+                 lower = muP-SEp,
+                 upper = muP+SEp)
 
 CI_dat |>
   ggplot() +
   geom_point(aes(mu, index)) +
-  geom_segment(aes(y=index, yend=index, x=lower, xend=upper)) +
+  geom_segment(aes(y = index, yend = index,
+                   x = lower, xend = upper)) +
   geom_vline(xintercept = propLW, color = "steelblue") +
-  xlim(c(0,1))
+  xlim(c(0, 1))
 ```
 
-Our interpretation of a frequentist confidence interval is based on repeated sampling given the true parameter value. Create 100 samples of 100 crickets each using 0.3 as the true population proportion, and calculate the mean and confidence interval. Plot these vertically with sample number (index) on the y-axis in the same as above. 
+Our interpretation of a frequentist confidence interval is based on repeated sampling given the true parameter value. Create 100 samples of 100 crickets each using 0.3 as the true population proportion, and calculate the mean and confidence interval. Plot these vertically with sample number (`index`) on the y-axis in the same as above. 
 
 ```{r}
 # FIXME
@@ -370,24 +397,25 @@ CI_dat <- tibble(index = seq(1, niter),
                  upper = numeric(length = niter))
 
 for(ii in 1:niter) {
-  WP <- rbinom(Nsamp,1,propLW)
+  WP <- rbinom(Nsamp, 1, propLW)
   
   muP <- mean(WP)
   
-  SEp <- 1.96*sqrt((muP*(1-muP))/Nsamp)
+  SEp <- 1.96 * sqrt((muP * (1 - muP)) / Nsamp)
   
   CI_dat[ii,] <- tibble(index = ii,
                         mu = muP,
-                        lower = muP-SEp,
-                        upper = muP+SEp)
+                        lower = muP - SEp,
+                        upper = muP + SEp)
 }  
 
 CI_dat |>
   ggplot() +
   geom_point(aes(mu, index)) +
-  geom_segment(aes(y=index, yend=index, x=lower, xend=upper)) +
+  geom_segment(aes(y = index, yend = index,
+                   x = lower, xend = upper)) +
   geom_vline(xintercept = propLW, color = "steelblue") +
-  xlim(c(0,1))
+  xlim(c(0, 1))
 ```
 
 Does the confidence interval always include the actual true value? How many of the 100 CIs do you predict will *not* include the true value? 
@@ -413,7 +441,7 @@ How do your results compare with your prediction?
 
 Consider the assumptions that we need to use here to get an estimate of the uncertainty in our parameter estimate when the typical practical use case will include only a single dataset. How do these differ from what we need to assume when calculating a Bayesian HPDI?
 
-> 
+> The frequentist CI makes the assumption of repeated "sampling", which effectively means re-running an experiment over and over. This is very unlikely to happen in any real-world situation (although it works great in a computer). The Bayesian HPDI has no such assumptions. We can directly interpret a Bayesian HPDI as the relative probability of parameter estimates given the priors, model, and data.
 
 Often when studying discrete traits, one might be interested in whether there is evidence the trait is determined by a single gene. This need not be the case as many discrete traits are polygenic and are modeled by a [liability threshold model](https://en.wikipedia.org/wiki/Threshold_model#Liability_threshold_model). Imagine you perform a cross where you expect a 3:1 phenotypic ratio, if the trait is determined by a single gene. You want to perform a goodness-of-fit test to ask if the proportion differs from this expectation.
 
@@ -467,6 +495,6 @@ How does this proportion compare to the p-value you observed?
 
 In a Bayesian analysis, the framework takes the dataset as given and explores the probability of different possible parameter values. Consider the analysis you did about the toads above. What assumptions did you need to make, and how do these lead to differences in how you approach the question you are asking?
 
-> 
+> This answer is similar to the one above.
 
 We have emphasized the differences in these frameworks here to help with understanding how the analysis process works in each. You should also recognize some similarities between the two in the general approach of using probability, randomness, and sampling to make inferences about data. In fact, if you use a uniform prior in a Bayesian analysis and your dataset is normally distributed, these two analyses should produce nearly identical conclusions.
