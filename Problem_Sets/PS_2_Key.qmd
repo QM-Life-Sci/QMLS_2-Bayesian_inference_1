@@ -189,8 +189,6 @@ PP <- ulam(
 )
 ```
 
-You again might get the warning `Declaration of arrays by placing brackets...`. You can ignore this warning.
-
 Next we extract the samples from the posterior. This returns a list with `mu` and `sigma` that we convert into a `data.frame()`.
 
 ```{r}
