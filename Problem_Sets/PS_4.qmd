@@ -1,4 +1,5 @@
 ---
+title: "Problem Set 4"
 author:
   - Your Name Here
 format: 
@@ -467,7 +468,7 @@ Compare the means of Hormone vs. Control separately by sex.
 
 Working with multiple continuous predictors also poses some unique challenges (not to mention continuous predictors with interactions). Visualization in particular is not straightforward, because, unless you want a 3D plot, you can't plot 3 continuous variables (1 outcome + 2 predictors) simultaneously. Options include making separate plots, coloring by one predictor by the other, or choosing specific values at which to visualize the data. And usually doing these reciprocally for the two predictors.
 
-To work through this example, we will use the (apparent) trade-off between fat content and lactose content in mammal milk. We used this example in *Quantitative Methods 1* to show how multiple regression is actually working (lecture 8-3). 
+To work through this example, we will use the (apparent) trade-off between fat content and lactose content in mammal milk. We used this example in *Quantitative Methods 1* to show how multiple regression is actually working. 
 
 Load the data in `Milk.xlsx`, select the columns `kcal.per.g`, `perc.fat`, `perc.lactose`, rename them to `Milk_energy`, `Fat`, and `Lactose`. We will predict the first by the additive effects of the latter two.
 
