@@ -507,7 +507,9 @@ The file `Bird_Plasma.xlsx` contains factorial data on blood plasma calcium conc
 - The levels of `Treatment` are "Hormone" and "None". Relevel `Treatment` so that "None" is the base level.
 - Plot a reaction norm of Calcium vs. Sex, with color encoding Treatment to get a sense for the pattern.
 
-```{r, message = FALSE}
+```{r}
+#| message: false
+
 # FIXME
 BP <- readxl::read_excel("../Data/Bird_Plasma.xlsx") |> 
   mutate(Treatment = factor(Treatment),
