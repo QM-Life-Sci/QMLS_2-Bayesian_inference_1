@@ -33,8 +33,8 @@ theme_set(theme_cowplot(font_size = 10))
 #   - Bird_Plasma.xlsx
 #   - Milk.xlsx
 
-# Install priorsense from github
-#   remotes::install_github("n-kall/priorsense")
+# Install updated brms from github
+#   remotes::install_github("paul-buerkner/brms")
 ```
 
 In this problem set, before we get to the models, we want give some demonstration code about two packages that help with some aspects of Bayesian inference. We'll walk through code so you have templates to use for later analyses in this problem set.
@@ -42,7 +42,7 @@ In this problem set, before we get to the models, we want give some demonstratio
 
 ## `priorsense` Package
 
-Usually, those new to Bayesian analysis have many questions about how to set a prior and how to evaluate whether the chosen prior is appropriate. We will show you a new package that helps to assess this second question - is my prior appropriate? This package is the `priorsense` package^[Kallioinen, N., T. Paananen, P.-C. Bürkner, and A. Vehtari. 2021. Detecting and diagnosing prior and likelihood sensitivity with power-scaling. http://arxiv.org/abs/2107.14054]. If you are interested is a less technical introduction, here is a short [recent video describing the package](https://www.youtube.com/watch?v=TBXD3HjcIps). We decided to leave this out of the lectures in part because it would have taken time away from other topics and because it is an area of still active research.
+Usually, those new to Bayesian analysis have many questions about how to set a prior and how to evaluate whether the chosen prior is appropriate. We will show you a new package that helps to assess this second question - is my prior appropriate? This package is the `priorsense` package^[Kallioinen, N., T. Paananen, P.-C. Bürkner, and A. Vehtari. 2024. Detecting and diagnosing prior and likelihood sensitivity with power-scaling. Stat. Comput. 34.]. If you are interested is a less technical introduction, here is a short [video describing the package](https://www.youtube.com/watch?v=TBXD3HjcIps). We decided to leave this out of the lectures in part because it would have taken time away from other topics and because it is an area of still active research.
 
 The approach that Kallioinen et al. take is to use importance sampling (as in PSIS-LOO-CV) of the prior or likelihood raised to exponent (the "power" in power-scaling) to detect instances of *prior-data conflict* wherein the prior contains too much information (e.g., is too constrained) or the likelihood (data) has too little information, or some combination of the two.
 
