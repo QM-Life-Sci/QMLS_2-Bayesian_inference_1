@@ -70,7 +70,7 @@ First install the `remotes` package (if you do not already have it installed), w
 Second, install `cmdstanr`
 
 - You can follow along with [Getting started with cmdstanr](https://mc-stan.org/cmdstanr/articles/cmdstanr.html) or just run the following lines of code.
-- `install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))`
+- `install.packages("cmdstanr", repos = c('https://stan-dev.r-universe.dev', getOption("repos")))`
 - The first time you load `cmdstanr` with `library()`, it will prompt you to install the cmdstan backend (which does the actual compilation and sampling of models)
     - Check that the toolchain is working `check_cmdstan_toolchain()`
     - If everything looks good, install cmdstan: `install_cmdstan()`

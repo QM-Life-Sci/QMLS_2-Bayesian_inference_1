@@ -3299,7 +3299,7 @@ window.Quarto = {
 <p>Second, install <code>cmdstanr</code></p>
 <ul>
 <li>You can follow along with <a href="https://mc-stan.org/cmdstanr/articles/cmdstanr.html">Getting started with cmdstanr</a> or just run the following lines of code.</li>
-<li><code>install.packages(&quot;cmdstanr&quot;, repos = c(&quot;https://mc-stan.org/r-packages/&quot;, getOption(&quot;repos&quot;)))</code></li>
+<li><code>install.packages(&quot;cmdstanr&quot;, repos = c(&#39;https://stan-dev.r-universe.dev&#39;, getOption(&quot;repos&quot;)))</code></li>
 <li>The first time you load <code>cmdstanr</code> with <code>library()</code>, it will prompt you to install the cmdstan backend (which does the actual compilation and sampling of models)
 <ul>
 <li>Check that the toolchain is working <code>check_cmdstan_toolchain()</code></li>
@@ -3451,7 +3451,7 @@ X-squared = 7.1111, df = 1, p-value = 0.007661</code></pre>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile</span>(exp1, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.5</span>, <span class="fl">0.975</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>     2.5%       50%     97.5% 
-0.5448319 0.7586066 0.9084345 </code></pre>
+0.5430369 0.7596547 0.9092920 </code></pre>
 </div>
 </div>
 <p>What are the median and 95% credible interval for the proportion of right pawed toads in experiment 1?</p>
@@ -3477,7 +3477,7 @@ X-squared = 7.1111, df = 1, p-value = 0.007661</code></pre>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile</span>(exp2, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.5</span>, <span class="fl">0.975</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>     2.5%       50%     97.5% 
-0.5619203 0.7169989 0.8425794 </code></pre>
+0.5582418 0.7150969 0.8418648 </code></pre>
 </div>
 </div>
 <p>What are the median and 95% credible interval for the proportion of right pawed toads in experiment 1?</p>
@@ -3512,7 +3512,7 @@ X-squared = 7.1111, df = 1, p-value = 0.007661</code></pre>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile</span>(exp1, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.5</span>, <span class="fl">0.975</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>     2.5%       50%     97.5% 
-0.5028714 0.6838190 0.8339603 </code></pre>
+0.4961451 0.6831313 0.8363621 </code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Experiment 2</span></span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">prior_post_beta</span>(<span class="dv">5</span>, <span class="dv">5</span>, <span class="dv">31</span>, <span class="dv">15</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -3527,7 +3527,7 @@ X-squared = 7.1111, df = 1, p-value = 0.007661</code></pre>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile</span>(exp2, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.5</span>, <span class="fl">0.975</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>     2.5%       50%     97.5% 
-0.5333751 0.6765175 0.7999787 </code></pre>
+0.5352903 0.6774774 0.7994854 </code></pre>
 </div>
 </div>
 <p>How do these results differ from those above for a Beta(1, 1) prior?</p>
@@ -3563,7 +3563,7 @@ X-squared = 7.1111, df = 1, p-value = 0.007661</code></pre>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile</span>(exp1, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.5</span>, <span class="fl">0.975</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>     2.5%       50%     97.5% 
-0.5553668 0.7731205 0.9192312 </code></pre>
+0.5536606 0.7713694 0.9207359 </code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Experiment 2</span></span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_grid</span>(<span class="fu">prior_post_beta</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">27</span>, <span class="dv">11</span>),</span>
@@ -3580,7 +3580,7 @@ X-squared = 7.1111, df = 1, p-value = 0.007661</code></pre>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile</span>(exp2, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.5</span>, <span class="fl">0.975</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>     2.5%       50%     97.5% 
-0.5631891 0.7195638 0.8472066 </code></pre>
+0.5620909 0.7219138 0.8462531 </code></pre>
 </div>
 </div>
 <p>How do these results differ from those above for a Beta(1, 1) prior?</p>
