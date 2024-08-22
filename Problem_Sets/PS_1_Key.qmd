@@ -23,6 +23,7 @@ theme_set(theme_cowplot())
 
 ```
 
+
 ## Setup
 
 Throughout this module, we will use an array of packages. Some of these are on CRAN and some are not. We will also need some helper software tools. Before you begin, make sure that both R and RStudio are updated to their latest versions.
@@ -42,7 +43,7 @@ Because the packages that do Bayesian sampling have to compile their code for th
 - Open a terminal (Applications -> Utilities -> Terminal.app)
 - Paste the following code: `xcode-select --install`
 - Follow the prompts. You will probably have to enter your password.
-- If you are on a University-controlled machine and have trouble, let us know and we can try to help.
+- If you are on a University-controlled machine and have trouble, let us know, and we can try to help.
 
 
 ### Install packages
@@ -116,6 +117,7 @@ summary(fm)
 a <- extract.samples(fm)$a
 median(logistic(a))
 ```
+
 
 #### Possible error
 
