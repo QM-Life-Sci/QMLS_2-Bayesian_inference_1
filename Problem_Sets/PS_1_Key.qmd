@@ -205,6 +205,7 @@ Use the function above to plot the prior/posterior pairing for a Beta(1, 1) prio
 
 ```{r}
 # FIXME
+
 prior_post_beta(1, 1, 15, 5)
 ```
 
@@ -224,6 +225,7 @@ In the chunk below draw 10,000 random samples from a beta distribution (`rbeta()
 
 ```{r}
 # FIXME
+
 exp1 <- rbeta(1e4, 15, 5)
 quantile(exp1, probs = c(0.025, 0.5, 0.975))
 ```
@@ -240,6 +242,7 @@ Repeat the steps above for experiment 2 in the chunk below.
 
 ```{r}
 # FIXME
+
 prior_post_beta(1, 1, 27, 11)
 
 exp2 <- rbeta(1e4, 27, 11)
@@ -267,6 +270,7 @@ In the chunk below repeat the analyses above for a Beta(5, 5) prior for experime
 
 ```{r}
 # FIXME
+
 # Experiment 1
 prior_post_beta(5, 5, 19, 9)
 
@@ -299,6 +303,7 @@ Carry out the same analyses using a Beta(0.5, 0.5) prior. Here also use `plot_gr
 
 ```{r}
 # FIXME
+
 # Experiment 1
 plot_grid(prior_post_beta(1, 1, 15, 5),
           prior_post_beta(0.5, 0.5, 14.5, 4.5),
@@ -330,6 +335,7 @@ About 90% of humans are right handed. What would be a good prior for right-hande
 
 ```{r}
 # FIXME
+
 ggplot() +
   geom_line(data = tibble(P = seq(0, 1, length.out = 200),
                           Density = dbeta(P, shape1 = 3, shape2 = 15)),
@@ -360,6 +366,7 @@ Let's say you are omniscient and you know the true proportion of long winged cri
 
 ```{r}
 # FIXME
+
 set.seed(38277983)
 
 propLW <- 0.3
@@ -428,6 +435,7 @@ Verify your prediction in the chunk below. For each simulated dataset, test whet
 
 ```{r}
 # FIXME
+
 CI_doesnt_include_P <- numeric(niter)
 
 for (ii in 1:niter) {
@@ -469,6 +477,7 @@ Remember, the frequentist framework is based on repeated runs of the same proces
 
 ```{r}
 # FIXME
+
 niter <- 1000
 chiT.set <- numeric(length = niter)
 
@@ -488,7 +497,6 @@ In the chunk below, calculate the proportion of random tests above in which the 
 # FIXME
 
 length(which(chiT.set >= obs.s)) / niter
-
 ```
 
 How does this proportion compare to the p-value you observed?
