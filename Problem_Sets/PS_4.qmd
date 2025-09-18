@@ -56,7 +56,7 @@ The prior scaling approach is a complementary to prior predictive simulation tha
 
 The main function of this package are:
 
-- `powerscale_sequence()` evaluates the prior/likelihood sensitivity across a range of powers. This function can be wrapped in either `powerscale_plot_dens()` or `powerscale_plot_quantities()` to plot changes in the posterior densities or the dependency of the posterior on prior or likelihood scaling, respectively.
+- `powerscale_sequence()` evaluates the prior/likelihood sensitivity across a range of powers. This function can be wrapped in either `powerscale_plot_dens()` or `powerscale_plot_quantity()` to plot changes in the posterior densities or the dependency of the posterior on prior or likelihood scaling, respectively.
 - `powerscale_sensitivity()` is the main function to test the sensitivity of the prior and likelihood via power-scaling.
 
 The package is not (yet) on CRAN, so you have to install it directly from github: `remotes::install_github("n-kall/priorsense")`
@@ -104,29 +104,29 @@ Because the scales of the variables are so different, we will plot them separate
 ```{r}
 powerscale_plot_dens(
   powerscale_sequence(fm),
-  quantities = c("mean", "sd"),
-  variables = "b_Density")
+  quantity = c("mean", "sd"),
+  variable = "b_Density")
 
 powerscale_plot_dens(
   powerscale_sequence(fm),
-  quantities = c("mean", "sd"),
-  variables = "b_Intercept")
+  quantity = c("mean", "sd"),
+  variable = "b_Intercept")
 
 powerscale_plot_dens(
   powerscale_sequence(fm),
-  quantities = c("mean", "sd"),
-  variables = "sigma")
+  quantity = c("mean", "sd"),
+  variable = "sigma")
 ```
 
 You can see how the all of the priors are sensitive to scaling, particularly `sigma`. We also get messages about high Pareto $k$ value, indicating poor fit.
 
-`powerscale_plot_quantities()` visualizes the rate of change in the posterior as $\alpha$ changes. Ideally we would like to see a flat-ish line for the prior, indicating that the prior is not sensitive to scaling. There are many options for the divergence measure, but the default "Cumulative Jensen-Shannon distance" (`cjs_dist`) seems to work fine.
+`powerscale_plot_quantity()` visualizes the rate of change in the posterior as $\alpha$ changes. Ideally we would like to see a flat-ish line for the prior, indicating that the prior is not sensitive to scaling. There are many options for the divergence measure, but the default "Cumulative Jensen-Shannon distance" (`cjs_dist`) seems to work fine.
 
 ```{r}
 powerscale_plot_quantities(
   powerscale_sequence(fm),
-  quantities = c("mean", "sd"),
-  variables = c("b_Density", "b_Intercept", "sigma")
+  quantity = c("mean", "sd"),
+  variable = c("b_Density", "b_Intercept", "sigma")
 )
 ```
 
@@ -163,23 +163,23 @@ Evaluating the priors:
 ```{r}
 powerscale_plot_dens(
   powerscale_sequence(fm),
-  quantities = c("mean", "sd"),
-  variables = "b_Density")
+  quantity = c("mean", "sd"),
+  variable = "b_Density")
 
 powerscale_plot_dens(
   powerscale_sequence(fm),
-  quantities = c("mean", "sd"),
-  variables = "b_Intercept")
+  quantity = c("mean", "sd"),
+  variable = "b_Intercept")
 
 powerscale_plot_dens(
   powerscale_sequence(fm),
-  quantities = c("mean", "sd"),
-  variables = "sigma")
+  quantity = c("mean", "sd"),
+  variable = "sigma")
 
 powerscale_plot_quantities(
   powerscale_sequence(fm),
-  quantities = c("mean", "sd"),
-  variables = c("b_Density", "b_Intercept", "sigma")
+  quantity = c("mean", "sd"),
+  variable = c("b_Density", "b_Intercept", "sigma")
 )
 
 powerscale_sensitivity(fm)
@@ -198,7 +198,7 @@ The documentation has a [page of visualizations from `brms` models]http://mjskay
 
 We will adapt some of the demo code to plot the posterior for the earwigs model we just fit.
 
-When you are trying to figure out what the variable names are in a model, the function `get_variables()` returns them:
+When you are trying to figure out what the variable names are in a model, the function `get_variabless()` returns them:
 
 ```{r}
 library(tidybayes)
