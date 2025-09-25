@@ -2,7 +2,7 @@
 title: "Problem Set 4"
 author:
   - Your Name Here
-format: 
+format:
   html:
     embed-resources: true
     toc: true
@@ -59,9 +59,9 @@ The main function of this package are:
 - `powerscale_sequence()` evaluates the prior/likelihood sensitivity across a range of powers. This function can be wrapped in either `powerscale_plot_dens()` or `powerscale_plot_quantity()` to plot changes in the posterior densities or the dependency of the posterior on prior or likelihood scaling, respectively.
 - `powerscale_sensitivity()` is the main function to test the sensitivity of the prior and likelihood via power-scaling.
 
-The package is not (yet) on CRAN, so you have to install it directly from github: `remotes::install_github("n-kall/priorsense")`
+Install `priorsense` from CRAN.
 
-We will use the Earwigs data from Problem Set 3 to explore how to use this package. 
+We will use the Earwigs data from Problem Set 3 to explore how to use this package.
 
 Load the data and plot:
 
@@ -70,15 +70,18 @@ Load the data and plot:
 EW <- read_csv("../Data/Earwigs.csv", show_col_types = FALSE)
 
 ggplot() +
-  geom_point(data = EW, aes(Density, Proportion_forceps),
-             color = "steelblue", size = 3)
+  geom_point(
+    data = EW,
+    aes(Density, Proportion_forceps),
+    color = "steelblue",
+    size = 3
+  )
 ```
 
 Check the variables that can have priors in the `brm()` model:
 
 ```{r}
-get_prior(Proportion_forceps ~ 1 + Density,
-          data = EW)
+get_prior(Proportion_forceps ~ 1 + Density, data = EW)
 ```
 
 We will skip the prior predictive simulation in this example. To use the `priorsense` functions, you have to fit the model with the data (i.e., not sampling from the prior only). So in practice you would do the prior predictive simulation here, sampling from the prior to get a prospective set of priors. Then you would use the functions in `priorsense` to evaluate the priors with the model.
@@ -86,12 +89,16 @@ We will skip the prior predictive simulation in this example. To use the `priors
 For now, we will set the priors to be very bad (which we know from doing Problem Set 3), to see what the diagnostics look like:
 
 ```{r}
-fm <- brm(Proportion_forceps ~ 1 + Density,
-          data = EW,
-          prior = c(prior(normal(0, 0.0001), class = b),
-                    prior(normal(0, 0.0001), class = Intercept),
-                    prior(normal(0, 0.01), class = sigma)),
-          refresh = 0)
+fm <- brm(
+  Proportion_forceps ~ 1 + Density,
+  data = EW,
+  prior = c(
+    prior(normal(0, 0.0001), class = b),
+    prior(normal(0, 0.0001), class = Intercept),
+    prior(normal(0, 0.01), class = sigma)
+  ),
+  refresh = 0
+)
 ```
 
 
@@ -105,17 +112,20 @@ Because the scales of the variables are so different, we will plot them separate
 powerscale_plot_dens(
   powerscale_sequence(fm),
   quantity = c("mean", "sd"),
-  variable = "b_Density")
+  variable = "b_Density"
+)
 
 powerscale_plot_dens(
   powerscale_sequence(fm),
   quantity = c("mean", "sd"),
-  variable = "b_Intercept")
+  variable = "b_Intercept"
+)
 
 powerscale_plot_dens(
   powerscale_sequence(fm),
   quantity = c("mean", "sd"),
-  variable = "sigma")
+  variable = "sigma"
+)
 ```
 
 You can see how the all of the priors are sensitive to scaling, particularly `sigma`. We also get messages about high Pareto $k$ value, indicating poor fit.
@@ -149,13 +159,17 @@ The prior for `sigma` is also poor, resulting in a prior-data conflict, where on
 Let's use the priors that we developed for problem set 3 and hopefully see a better pattern.
 
 ```{r}
-fm <- brm(Proportion_forceps ~ 1 + Density,
-          data = EW,
-          prior = c(prior(normal(0, 0.1), class = b),
-                    prior(normal(0, 1), class = Intercept),
-                    prior(normal(0, 1), class = sigma)),
-          refresh = 0,
-          iter = 5e3)
+fm <- brm(
+  Proportion_forceps ~ 1 + Density,
+  data = EW,
+  prior = c(
+    prior(normal(0, 0.1), class = b),
+    prior(normal(0, 1), class = Intercept),
+    prior(normal(0, 1), class = sigma)
+  ),
+  refresh = 0,
+  iter = 5e3
+)
 ```
 
 Evaluating the priors:
@@ -164,17 +178,20 @@ Evaluating the priors:
 powerscale_plot_dens(
   powerscale_sequence(fm),
   quantity = c("mean", "sd"),
-  variable = "b_Density")
+  variable = "b_Density"
+)
 
 powerscale_plot_dens(
   powerscale_sequence(fm),
   quantity = c("mean", "sd"),
-  variable = "b_Intercept")
+  variable = "b_Intercept"
+)
 
 powerscale_plot_dens(
   powerscale_sequence(fm),
   quantity = c("mean", "sd"),
-  variable = "sigma")
+  variable = "sigma"
+)
 
 powerscale_plot_quantities(
   powerscale_sequence(fm),
@@ -225,7 +242,7 @@ fm |>
   spread_rvars(b_Intercept, b_Density, sigma)
 
 fm |>
-  spread_rvars(b_Intercept, b_Density, sigma) |> 
+  spread_rvars(b_Intercept, b_Density, sigma) |>
   median_hdi(.width = 0.89)
 ```
 
@@ -233,8 +250,8 @@ There are many options in `tidybayes` to plot distributions and intervals. Here 
 
 ```{r}
 fm |>
-  spread_rvars(b_Intercept, b_Density, sigma) |> 
-  pivot_longer(cols = everything()) |> 
+  spread_rvars(b_Intercept, b_Density, sigma) |>
+  pivot_longer(cols = everything()) |>
   ggplot(aes(y = name, dist = value)) +
   stat_pointinterval(.width = c(0.89, 0.97))
 ```
@@ -243,8 +260,8 @@ fm |>
 
 ```{r}
 fm |>
-  spread_rvars(b_Density) |> 
-  pivot_longer(cols = everything()) |> 
+  spread_rvars(b_Density) |>
+  pivot_longer(cols = everything()) |>
   ggplot(aes(y = name, dist = value)) +
   stat_pointinterval(.width = c(0.89, 0.97))
 
@@ -252,7 +269,7 @@ fm |>
 
 From this plot you can see how the posterior is credibly different from 0, even though the parameter estimate is small.
 
-`tidybayes` works well with `data_grid()` from the `modelr` package. Like `crossing()` that we have used before, `data_grid()` generates the pairwise combinations of variables that are passed to it, but without needing to include as many details (it will by default use the range of continuous variables and all the levels of factors). 
+`tidybayes` works well with `data_grid()` from the `modelr` package. Like `crossing()` that we have used before, `data_grid()` generates the pairwise combinations of variables that are passed to it, but without needing to include as many details (it will by default use the range of continuous variables and all the levels of factors).
 
 If we then pipe that out to `add_epred_draws()` called with the fitted model, we can create a tibble with the values of `Density` across a range paired with the expected value of `Proportion_forceps`.
 
@@ -269,11 +286,9 @@ EW |>
 
 EW |>
   data_grid(Density = seq_range(Density, n = 200)) |>
-  add_epred_draws(fm) |> 
+  add_epred_draws(fm) |>
   ggplot(aes(x = Density, y = Proportion_forceps)) +
-  stat_lineribbon(aes(y = .epred),
-                  .width = c(0.5, 0.89, 0.97),
-                  alpha = 0.5) +
+  stat_lineribbon(aes(y = .epred), .width = c(0.5, 0.89, 0.97), alpha = 0.5) +
   geom_point(data = EW)
 ```
 
@@ -284,11 +299,13 @@ We can do the same but generate a posterior predictive distribution plot by call
 
 EW |>
   data_grid(Density = seq_range(Density, n = 200)) |>
-  add_predicted_draws(fm) |> 
+  add_predicted_draws(fm) |>
   ggplot(aes(x = Density, y = Proportion_forceps)) +
-  stat_lineribbon(aes(y = .prediction),
-                  .width = c(0.5, 0.89, 0.97),
-                  alpha = 0.5) +
+  stat_lineribbon(
+    aes(y = .prediction),
+    .width = c(0.5, 0.89, 0.97),
+    alpha = 0.5
+  ) +
   geom_point(data = EW)
 ```
 
@@ -386,7 +403,6 @@ The file `Bird_Plasma.xlsx` contains factorial data on blood plasma calcium conc
 ```{r}
 #| message: false
 
-
 ```
 
 
@@ -403,7 +419,7 @@ You can do this with a simple mutate, joining the two variables:
 
 # FIXME
 
-BP <- BP |> 
+BP <- BP |>
   mutate(Sex_Trt = paste(Sex, Treatment, sep = "_"))
 ```
 
@@ -470,7 +486,7 @@ Compare the means of Hormone vs. Control separately by sex.
 
 Working with multiple continuous predictors also poses some unique challenges (not to mention continuous predictors with interactions). Visualization in particular is not straightforward, because, unless you want a 3D plot, you can't plot 3 continuous variables (1 outcome + 2 predictors) simultaneously. Options include making separate plots, coloring by one predictor by the other, or choosing specific values at which to visualize the data. And usually doing these reciprocally for the two predictors.
 
-To work through this example, we will use the (apparent) trade-off between fat content and lactose content in mammal milk. We used this example in *Quantitative Methods 1* to show how multiple regression is actually working. 
+To work through this example, we will use the (apparent) trade-off between fat content and lactose content in mammal milk. We used this example in *Quantitative Methods 1* to show how multiple regression is actually working.
 
 Load the data in `Milk.xlsx`, select the columns `kcal.per.g`, `perc.fat`, `perc.lactose`, rename them to `Milk_energy`, `Fat`, and `Lactose`. We will predict the first by the additive effects of the latter two.
 
@@ -569,4 +585,3 @@ Summarize the posterior however you think is appropriate.
 ```{r}
 
 ```
-
