@@ -1,0 +1,32 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"cSpell.words": [
+			"Baribault",
+			"bivariate",
+			"cowplot",
+			"Dablander",
+			"Dogucu",
+			"Dunson",
+			"Edelsbrunner",
+			"Gelman",
+			"Gronau",
+			"INLA",
+			"Kruschke",
+			"Liddell",
+			"newwindow",
+			"Psychon",
+			"qmds",
+			"QMLS",
+			"Raton",
+			"revealjs",
+			"syscall",
+			"tidyverse",
+			"Vehtari"
+		]
+	}
+}
