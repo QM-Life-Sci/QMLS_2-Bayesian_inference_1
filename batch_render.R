@@ -2,6 +2,40 @@
 
 options(warn = 2)
 
+# Install necessary packages
+# Set install_packages <- TRUE to install/update all packages via pak
+
+install_packages <- FALSE
+
+packages <- c(
+  "bayesplot",
+  "bayestestR",
+  "brms",
+  "stan-dev/cmdstanr",
+  "coda",
+  "cowplot",
+  "jfieberg/Data4Ecologists",
+  "distributional",
+  "lubridate",
+  "modelr",
+  "patchwork",
+  "posterior",
+  "priorsense",
+  "readxl",
+  "rmcelreath/rethinking",
+  "hyunjimoon/SBC",
+  "see",
+  "tidybayes",
+  "tidyverse",
+  "truncnorm",
+  "wesanderson"
+)
+
+if (install_packages) {
+  pak::pak(packages)
+}
+
+
 # Lectures
 qmds <- list.files(
   pattern = "^[0-9]+\\.[1-6].*qmd$",
