@@ -3,10 +3,6 @@
 options(warn = 2)
 
 # Install necessary packages
-# Set install_packages <- TRUE to install/update all packages via pak
-
-install_packages <- FALSE
-
 packages <- c(
   "bayesplot",
   "bayestestR",
@@ -31,10 +27,7 @@ packages <- c(
   "wesanderson"
 )
 
-if (install_packages) {
-  pak::pak(packages)
-}
-
+# pak::pak(packages)
 
 # Lectures
 qmds <- list.files(
